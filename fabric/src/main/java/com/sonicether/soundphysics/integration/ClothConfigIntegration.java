@@ -2,7 +2,17 @@ package com.sonicether.soundphysics.integration;
 
 import com.sonicether.soundphysics.Loggers;
 import com.sonicether.soundphysics.SoundPhysicsMod;
+import com.sonicether.soundphysics.config.SoundPhysicsConfig;
 import com.sonicether.soundphysics.config.blocksound.BlockDefinition;
+import de.maxhenkel.configbuilder.entry.*;
+import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
+import me.shedaniel.clothconfig2.api.ConfigBuilder;
+import me.shedaniel.clothconfig2.api.ConfigCategory;
+import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.gui.entries.FloatListEntry;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import de.maxhenkel.configbuilder.entry.*;
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
@@ -31,6 +41,58 @@ public class ClothConfigIntegration {
                 Component.translatable("cloth_config.sound_physics_remastered.enabled"),
                 Component.translatable("cloth_config.sound_physics_remastered.enabled.description"),
                 SoundPhysicsMod.CONFIG.enabled
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.reverb_enabled"),
+                Component.translatable("cloth_config.sound_physics_remastered.reverb_enabled.description"),
+                SoundPhysicsMod.CONFIG.reverbEnabled
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_reverb"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_reverb.description"),
+                SoundPhysicsMod.CONFIG.recordReverb
+        ));
+        for (SoundSource category : SoundPhysicsConfig.physicsCategoryOrder()) {
+            general.addEntry(fromConfigEntry(entryBuilder,
+                    Component.translatable("cloth_config.sound_physics_remastered.physics_category", Component.translatable("soundCategory." + category.getName())),
+                    Component.translatable("cloth_config.sound_physics_remastered.physics_category.description"),
+                    SoundPhysicsMod.CONFIG.physicsFor(category)
+            ));
+        }
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_reverb_bass"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_reverb_bass.description"),
+                SoundPhysicsMod.CONFIG.recordReverbBass
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_reverb_body"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_reverb_body.description"),
+                SoundPhysicsMod.CONFIG.recordReverbBody
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_late_send"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_late_send.description"),
+                SoundPhysicsMod.CONFIG.recordLateSend
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_facing_reverb"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_facing_reverb.description"),
+                SoundPhysicsMod.CONFIG.recordFacingReverb
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_facing_impact"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_facing_impact.description"),
+                SoundPhysicsMod.CONFIG.recordFacingImpact
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_gain_lf"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_gain_lf.description"),
+                SoundPhysicsMod.CONFIG.recordGainLf
+        ));
+        general.addEntry(fromConfigEntry(entryBuilder,
+                Component.translatable("cloth_config.sound_physics_remastered.record_decay_lf_ratio"),
+                Component.translatable("cloth_config.sound_physics_remastered.record_decay_lf_ratio.description"),
+                SoundPhysicsMod.CONFIG.recordDecayLfRatio
         ));
         general.addEntry(fromConfigEntry(entryBuilder,
                 Component.translatable("cloth_config.sound_physics_remastered.simple_voice_chat_integration"),
