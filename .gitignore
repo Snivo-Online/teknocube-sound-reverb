@@ -117,6 +117,9 @@ run/
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
 
+# TeknoCube release jars
+!release/*.jar
+
 curseforge_api_key.txt
 mod_update_api_key.txt
 modrinth_token.txt

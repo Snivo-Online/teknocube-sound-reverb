@@ -1,6 +1,9 @@
 # Sound Physics TeknoCube
 
-Fork of [Sound Physics Remastered](https://github.com/henkelmax/sound-physics-remastered) for TeknoCube (Minecraft 26.2 / Fabric).
+Fork of [Sound Physics Remastered](https://github.com/henkelmax/sound-physics-remastered) for TeknoCube (Fabric).
+
+- Branch `26.3` (and `master`): Minecraft 26.3. Jar: `release/sound-physics-remastered-fabric-1.5.1+26.3-teknocube.jar`
+- Branch `teknocube/record-physics`: Minecraft 26.2. Jar: `release/sound-physics-remastered-fabric-1.5.1+26.2-teknocube.jar`
 
 **Change vs upstream:** `SoundSource.RECORDS` is no longer skipped wholesale. Only `music_disc.*` stay dry when `update_moving_sounds` is off. Plugin speakers, note blocks, and other record-category one-shots get reverb/occlusion.
 
