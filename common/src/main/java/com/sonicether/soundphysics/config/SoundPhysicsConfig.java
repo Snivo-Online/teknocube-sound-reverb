@@ -5,10 +5,31 @@ import com.sonicether.soundphysics.SoundPhysics;
 
 import de.maxhenkel.configbuilder.ConfigBuilder;
 import de.maxhenkel.configbuilder.entry.ConfigEntry;
+import net.minecraft.sounds.SoundSource;
 
 public class SoundPhysicsConfig {
 
     public final ConfigEntry<Boolean> enabled;
+    public final ConfigEntry<Boolean> reverbEnabled;
+    public final ConfigEntry<Boolean> recordReverb;
+    public final ConfigEntry<Boolean> physicsMaster;
+    public final ConfigEntry<Boolean> physicsMusic;
+    public final ConfigEntry<Boolean> physicsRecords;
+    public final ConfigEntry<Boolean> physicsWeather;
+    public final ConfigEntry<Boolean> physicsBlocks;
+    public final ConfigEntry<Boolean> physicsHostile;
+    public final ConfigEntry<Boolean> physicsNeutral;
+    public final ConfigEntry<Boolean> physicsPlayers;
+    public final ConfigEntry<Boolean> physicsAmbient;
+    public final ConfigEntry<Boolean> physicsVoice;
+    public final ConfigEntry<Boolean> physicsUi;
+    public final ConfigEntry<Float> recordReverbBass;
+    public final ConfigEntry<Float> recordReverbBody;
+    public final ConfigEntry<Float> recordLateSend;
+    public final ConfigEntry<Float> recordGainLf;
+    public final ConfigEntry<Float> recordDecayLfRatio;
+    public final ConfigEntry<Float> recordFacingReverb;
+    public final ConfigEntry<Float> recordFacingImpact;
 
     public final ConfigEntry<Float> attenuationFactor;
     public final ConfigEntry<Float> reverbAttenuationDistance;
@@ -53,6 +74,57 @@ public class SoundPhysicsConfig {
     public SoundPhysicsConfig(ConfigBuilder builder) {
         enabled = builder.booleanEntry("enabled", true)
                 .comment("Enables/Disables all sound effects");
+        reverbEnabled = builder.booleanEntry("reverb_enabled", true)
+                .comment("Enables/Disables reverberation. Occlusion and attenuation stay active.");
+        recordReverb = builder.booleanEntry("record_reverb", true)
+                .comment(
+                        "Enables/Disables reverberation for the Jukebox/Note Blocks category",
+                        "This includes plugin speakers. Occlusion stays active."
+                );
+        physicsMaster = physicsCategory(builder, "master", false);
+        physicsMusic = physicsCategory(builder, "music", false);
+        physicsRecords = physicsCategory(builder, "record", true);
+        physicsWeather = physicsCategory(builder, "weather", false);
+        physicsBlocks = physicsCategory(builder, "block", false);
+        physicsHostile = physicsCategory(builder, "hostile", false);
+        physicsNeutral = physicsCategory(builder, "neutral", false);
+        physicsPlayers = physicsCategory(builder, "player", false);
+        physicsAmbient = physicsCategory(builder, "ambient", false);
+        physicsVoice = physicsCategory(builder, "voice", false);
+        physicsUi = physicsCategory(builder, "ui", false);
+        recordReverbBass = builder.floatEntry("record_reverb_bass", 0.7F, 0F, 1F)
+                .comment(
+                        "TeknoCube music: how dark the speaker/jukebox reverb is",
+                        "0 = bright SPR default, 1 = boomier low end"
+                );
+        recordReverbBody = builder.floatEntry("record_reverb_body", 1.4F, 0.5F, 2.5F)
+                .comment(
+                        "TeknoCube music: early/mid room send multiplier for speakers/jukebox"
+                );
+        recordLateSend = builder.floatEntry("record_late_send", 2.0F, 0.5F, 4F)
+                .comment(
+                        "TeknoCube music: hall/late reverb send multiplier for speakers/jukebox"
+                );
+        recordGainLf = builder.floatEntry("record_gain_lf", 1.0F, 0F, 1F)
+                .comment(
+                        "EAX GAINLF: low-frequency reverb gain (global effect slots)",
+                        "1.0 is max. Footsteps share these slots."
+                );
+        recordDecayLfRatio = builder.floatEntry("record_decay_lf_ratio", 1.35F, 0.1F, 2F)
+                .comment(
+                        "EAX DECAY_LFRATIO: how much longer bass rings vs treble (global)",
+                        "1.0 = same decay, 1.5 = bass tail 50% longer"
+                );
+        recordFacingReverb = builder.floatEntry("record_facing_reverb", 1.0F, 0F, 2F)
+                .comment(
+                        "Extra wet send when looking at speakers (does not muffle the dry hit)",
+                        "0 = no facing boost, 1 = double wet when facing the source"
+                );
+        recordFacingImpact = builder.floatEntry("record_facing_impact", 1.0F, 0F, 2F)
+                .comment(
+                        "On-axis speaker punch: louder dry, boomier early reflections, proximity 2-8 blocks",
+                        "0 = off, 1 = default recipe, 2 = double. Does not muffle the dry hit."
+                );
 
         attenuationFactor = builder
                 .floatEntry("attenuation_factor", 1F, 0.1F, 1F)
@@ -148,7 +220,10 @@ public class SoundPhysicsConfig {
         redirectNonOccludedSounds = builder.booleanEntry("redirect_non_occluded_sounds", true)
                 .comment("Skip redirecting non-occluded sounds (the ones you can see directly)");
         updateMovingSounds = builder.booleanEntry("update_moving_sounds", false)
-                .comment("If music discs or other longer sounds should be frequently reevaluated");
+                .comment(
+                        "If music discs or other longer sounds should be frequently reevaluated",
+                        "TeknoCube: only music_disc.* skip physics when this is false. Other RECORDS sounds (note blocks, plugin speakers) still get reverb"
+                );
         soundUpdateInterval = builder.integerEntry("sound_update_interval", 5, 1, Integer.MAX_VALUE)
                 .comment(
                         "The interval in ticks that moving sounds are reevaluated",
@@ -196,6 +271,50 @@ public class SoundPhysicsConfig {
     public void reloadClient() {
         Loggers.log("Reloading reverb parameters");
         SoundPhysics.syncReverbParams();
+    }
+
+    public boolean isPhysicsCategoryEnabled(SoundSource category) {
+        return physicsFor(category).get();
+    }
+
+    public ConfigEntry<Boolean> physicsFor(SoundSource category) {
+        return switch (category) {
+            case MASTER -> physicsMaster;
+            case MUSIC -> physicsMusic;
+            case RECORDS -> physicsRecords;
+            case WEATHER -> physicsWeather;
+            case BLOCKS -> physicsBlocks;
+            case HOSTILE -> physicsHostile;
+            case NEUTRAL -> physicsNeutral;
+            case PLAYERS -> physicsPlayers;
+            case AMBIENT -> physicsAmbient;
+            case VOICE -> physicsVoice;
+            case UI -> physicsUi;
+        };
+    }
+
+    public static SoundSource[] physicsCategoryOrder() {
+        return new SoundSource[]{
+                SoundSource.RECORDS,
+                SoundSource.MASTER,
+                SoundSource.MUSIC,
+                SoundSource.WEATHER,
+                SoundSource.BLOCKS,
+                SoundSource.HOSTILE,
+                SoundSource.NEUTRAL,
+                SoundSource.PLAYERS,
+                SoundSource.AMBIENT,
+                SoundSource.VOICE,
+                SoundSource.UI
+        };
+    }
+
+    private static ConfigEntry<Boolean> physicsCategory(ConfigBuilder builder, String name, boolean defaultValue) {
+        return builder.booleanEntry("physics_category_" + name, defaultValue)
+                .comment(
+                        "TeknoCube: run raycast/occlusion/reverb for sound category '" + name + "'",
+                        "Default off except jukebox/note blocks (record)"
+                );
     }
 
 }

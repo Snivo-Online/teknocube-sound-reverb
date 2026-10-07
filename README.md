@@ -1,3 +1,17 @@
+# Sound Physics TeknoCube
+
+Fork of [Sound Physics Remastered](https://github.com/henkelmax/sound-physics-remastered) for TeknoCube (Minecraft 26.2 / Fabric).
+
+**Change vs upstream:** `SoundSource.RECORDS` is no longer skipped wholesale. Only `music_disc.*` stay dry when `update_moving_sounds` is off. Plugin speakers, note blocks, and other record-category one-shots get reverb/occlusion.
+
+Music & Sounds menu adds two toggles: master reverb, and reverb for the Jukebox/Speakers slider. Occlusion stays either way. Three live sliders tune speaker/jukebox reverb: bass, body, hall.
+
+Same `mod_id` as upstream (`sound_physics_remastered`) — **replace** the original jar, do not install both.
+
+Client-only. No server / plugin / resource-pack change required.
+
+---
+
 # Sound Physics Remastered
 
 > This is a fork of [Sound Physics Fabric](https://github.com/vlad2305m/Sound-Physics-Fabric) by [vlad2305m](https://github.com/vlad2305m) which is a fork of [Sound Physics](https://github.com/sonicether/Sound-Physics) by [Sonic Ether](https://github.com/sonicether).

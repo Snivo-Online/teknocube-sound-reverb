@@ -212,6 +212,11 @@ public class SoundPhysics {
             setDefaultEnvironment(sourceID, auxOnly);
             return null;
         }
+        if (!SoundPhysicsMod.CONFIG.isPhysicsCategoryEnabled(category)) {
+            Loggers.logDebug("Sound {} skipped because category {} physics is disabled", sound, category);
+            setDefaultEnvironment(sourceID, auxOnly);
+            return null;
+        }
         Vec3 soundPos = new Vec3(posX, posY, posZ);
         double distance = player.position().distanceTo(soundPos);
         if (distance > SoundPhysicsMod.CONFIG.maxSoundProcessingDistance.get()) {
@@ -220,11 +225,10 @@ public class SoundPhysics {
             return null;
         }
 
-        if (!SoundPhysicsMod.CONFIG.updateMovingSounds.get()) {
-            if (category == SoundSource.RECORDS) {
-                setDefaultEnvironment(sourceID, auxOnly);
-                return null;
-            }
+        if (!SoundPhysicsMod.CONFIG.updateMovingSounds.get() && isMusicDisc(sound)) {
+            Loggers.logDebug("Sound {} skipped because it is a music disc and update_moving_sounds is disabled", sound);
+            setDefaultEnvironment(sourceID, auxOnly);
+            return null;
         }
 
         if (!SoundRateManager.isWorldInitialized()) {
@@ -280,6 +284,12 @@ public class SoundPhysics {
 
         if (minecraft.player.isUnderWater() || sourceIsUnderwater) {
             directCutoff *= 1F - SoundPhysicsMod.CONFIG.underwaterFilter.get();
+        }
+
+        if (!shouldApplyReverb(category)) {
+            float dryGain = auxOnly ? 0F : (float) Math.pow(directCutoff, 0.1D);
+            setEnvironment(sourceID, 0F, 0F, 0F, 0F, 1F, 1F, 1F, 1F, directCutoff, dryGain);
+            return null;
         }
 
         // Shoot rays around sound
@@ -426,11 +436,14 @@ public class SoundPhysics {
 
         sendGain1 *= bounceReflectivityRatio[1];
 
+        boolean musicSend = category == SoundSource.RECORDS;
         if (bounceReflectivityRatio.length > 2) {
-            sendGain2 *= (float) Math.pow(bounceReflectivityRatio[2], 3D);
+            double lateExponent = musicSend ? 2D : 3D;
+            sendGain2 *= (float) Math.pow(bounceReflectivityRatio[2], lateExponent);
         }
         if (bounceReflectivityRatio.length > 3) {
-            sendGain3 *= (float) Math.pow(bounceReflectivityRatio[3], 4D);
+            double hallExponent = musicSend ? 2.5D : 4D;
+            sendGain3 *= (float) Math.pow(bounceReflectivityRatio[3], hallExponent);
         }
 
         sendGain0 = Mth.clamp(sendGain0, 0F, 1F);
@@ -453,6 +466,61 @@ public class SoundPhysics {
         sendGain2 = sendGainMultiplier * sendGain2;
         sendGain3 = sendGainMultiplier * sendGain3;
 
+        if (musicSend) {
+            float body = SoundPhysicsMod.CONFIG.recordReverbBody.get();
+            float late = SoundPhysicsMod.CONFIG.recordLateSend.get();
+            float bass = SoundPhysicsMod.CONFIG.recordReverbBass.get();
+            sendGain0 = Mth.clamp(sendGain0 * body, 0F, 1F);
+            sendGain1 = Mth.clamp(sendGain1 * body, 0F, 1F);
+            sendGain2 = Mth.clamp(sendGain2 * late, 0F, 1F);
+            sendGain3 = Mth.clamp(sendGain3 * late, 0F, 1F);
+            float dark = 1F - 0.65F * bass;
+            sendCutoff0 *= dark;
+            sendCutoff1 *= dark;
+            sendCutoff2 *= dark;
+            sendCutoff3 *= dark;
+
+            var forward = minecraft.gameRenderer.mainCamera().forwardVector();
+            Vec3 toSound = soundPos.subtract(playerPos);
+            double lenSq = toSound.lengthSqr();
+            float toward = 0F;
+            if (lenSq > 1.0E-8D) {
+                double inv = 1.0D / Math.sqrt(lenSq);
+                float facing = (float) (forward.x() * toSound.x * inv + forward.y() * toSound.y * inv + forward.z() * toSound.z * inv);
+                toward = Mth.clamp(facing, 0F, 1F);
+            }
+            float proximity = Mth.clamp(1F - (soundDistance - 2F) / 6F, 0F, 1F);
+            float punch = SoundPhysicsMod.CONFIG.recordFacingImpact.get() * toward * proximity;
+
+            if (toward > 0F) {
+                float amount = SoundPhysicsMod.CONFIG.recordFacingReverb.get() * toward;
+                sendGain0 = Mth.clamp(sendGain0 * (1F + amount * 0.5F), 0F, 1F);
+                sendGain1 = Mth.clamp(sendGain1 * (1F + amount * 0.5F), 0F, 1F);
+                sendGain2 = Mth.clamp(sendGain2 * (1F + amount), 0F, 1F);
+                sendGain3 = Mth.clamp(sendGain3 * (1F + amount), 0F, 1F);
+                float presence = Mth.clamp(amount, 0F, 1F);
+                sendCutoff0 += (1F - sendCutoff0) * 0.45F * presence;
+                sendCutoff1 += (1F - sendCutoff1) * 0.45F * presence;
+                sendCutoff2 += (1F - sendCutoff2) * 0.55F * presence;
+                sendCutoff3 += (1F - sendCutoff3) * 0.55F * presence;
+            }
+            if (punch > 0F) {
+                sendGain0 = Mth.clamp(sendGain0 * (1F + 0.8F * punch), 0F, 1F);
+                sendGain1 = Mth.clamp(sendGain1 * (1F + 0.55F * punch), 0F, 1F);
+                sendCutoff0 *= 1F - 0.5F * Mth.clamp(punch, 0F, 1F);
+                sendCutoff1 *= 1F - 0.35F * Mth.clamp(punch, 0F, 1F);
+                if (!auxOnly) {
+                    float dryBoost = 1F + 0.25F * punch;
+                    if (directGain >= 0.999F) {
+                        float sourceGain = AL10.alGetSourcef(sourceID, AL10.AL_GAIN);
+                        AL10.alSourcef(sourceID, AL10.AL_GAIN, sourceGain * dryBoost);
+                    } else {
+                        directGain = Mth.clamp(directGain * dryBoost, 0F, 1F);
+                    }
+                }
+            }
+        }
+
         Loggers.logEnvironment("Final environment settings: {}, {}, {}, {}", sendGain0, sendGain1, sendGain2, sendGain3);
 
         assert minecraft.player != null;
@@ -470,6 +538,22 @@ public class SoundPhysics {
 
     public static boolean isAmbientSound(Identifier sound) {
         return AMBIENT_PATTERN.matcher(sound.toString()).matches();
+    }
+
+    public static boolean shouldApplyReverb(SoundSource category) {
+        if (SoundPhysicsMod.CONFIG == null) {
+            return true;
+        }
+        if (!SoundPhysicsMod.CONFIG.reverbEnabled.get()) {
+            return false;
+        }
+        return category != SoundSource.RECORDS || SoundPhysicsMod.CONFIG.recordReverb.get();
+    }
+
+    /** Vanilla/modded jukebox tracks (`music_disc.*`). Other RECORDS sounds still get physics. */
+    public static boolean isMusicDisc(Identifier sound) {
+        String path = sound.getPath();
+        return path.equals("music_disc") || path.startsWith("music_disc.");
     }
 
     private static float getBlockReflectivity(BlockPos blockPos) {
@@ -681,10 +765,16 @@ public class SoundPhysics {
         Loggers.logALError("Error while assigning reverb gain " + r.gain);
         EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_GAINHF, r.gainHF);
         Loggers.logALError("Error while assigning reverb gainHF " + r.gainHF);
+        EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_GAINLF, r.gainLF);
+        Loggers.logALError("Error while assigning reverb gainLF " + r.gainLF);
         EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_DECAY_TIME, r.decayTime);
         Loggers.logALError("Error while assigning reverb decayTime " + r.decayTime);
         EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_DECAY_HFRATIO, r.decayHFRatio);
         Loggers.logALError("Error while assigning reverb decayHFRatio " + r.decayHFRatio);
+        EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_DECAY_LFRATIO, r.decayLFRatio);
+        Loggers.logALError("Error while assigning reverb decayLFRatio " + r.decayLFRatio);
+        EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_LFREFERENCE, r.lfReference);
+        Loggers.logALError("Error while assigning reverb lfReference " + r.lfReference);
         EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_REFLECTIONS_GAIN, r.reflectionsGain);
         Loggers.logALError("Error while assigning reverb reflectionsGain " + r.reflectionsGain);
         EXTEfx.alEffectf(reverbSlot, EXTEfx.AL_EAXREVERB_LATE_REVERB_GAIN, r.lateReverbGain);
