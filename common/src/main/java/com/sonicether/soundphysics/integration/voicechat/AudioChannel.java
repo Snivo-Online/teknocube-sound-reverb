@@ -21,9 +21,9 @@ public class AudioChannel {
         this.channelId = channelId;
     }
 
-    public void onSound(int source, @Nullable Vec3 soundPos, boolean auxOnly, @Nullable String category) {
+    public void onSound(int source, @Nullable Vec3 soundPos, float directGainScale, @Nullable String category) {
         if (soundPos == null) {
-            SoundPhysics.setDefaultEnvironment(source, auxOnly);
+            SoundPhysics.setDefaultEnvironment(source, directGainScale);
             return;
         }
 
@@ -33,13 +33,8 @@ public class AudioChannel {
             return;
         }
 
-        SoundPhysics.setLastSoundCategoryAndName(SoundSource.MASTER, category == null ? VOICECHAT_SOUND : Identifier.fromNamespaceAndPath(VOICECHAT, category));
-
-        if (auxOnly) {
-            SoundPhysics.onPlayReverb(soundPos.x(), soundPos.y(), soundPos.z(), source);
-        } else {
-            SoundPhysics.onPlaySound(soundPos.x(), soundPos.y(), soundPos.z(), source);
-        }
+        Identifier sound = category == null ? VOICECHAT_SOUND : Identifier.fromNamespaceAndPath(VOICECHAT, category);
+        SoundPhysics.processSound(source, soundPos.x(), soundPos.y(), soundPos.z(), SoundSource.MASTER, sound, directGainScale);
 
         lastUpdate = time;
         lastPos = soundPos;

@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 
 import de.maxhenkel.voicechat.api.events.*;
+import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.EXTThreadLocalContext;
 
 import com.sonicether.soundphysics.Loggers;
@@ -16,6 +17,7 @@ import com.sonicether.soundphysics.SoundPhysicsMod;
 import de.maxhenkel.voicechat.api.ForgeVoicechatPlugin;
 import de.maxhenkel.voicechat.api.Position;
 import de.maxhenkel.voicechat.api.VoicechatApi;
+import de.maxhenkel.voicechat.api.VoicechatClientApi;
 import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.audiochannel.ClientLocationalAudioChannel;
 import net.minecraft.client.Minecraft;
@@ -106,6 +108,10 @@ public class SimpleVoiceChatPlugin implements VoicechatPlugin {
             return;
         }
 
+        if (SoundPhysicsMod.CONFIG.enabled.get()) {
+            SoundPhysics.applyReferenceDistanceWorkaround(event.getSource(), AL10.alGetSourcef(event.getSource(), AL10.AL_MAX_DISTANCE));
+        }
+
         boolean auxOnly = SoundPhysicsMod.CONFIG.hearSelf.get() && OWN_VOICE_ID.equals(channelId);
 
         @Nullable AudioChannel audioChannel = audioChannels.get(channelId);
@@ -115,7 +121,22 @@ public class SimpleVoiceChatPlugin implements VoicechatPlugin {
             audioChannels.put(channelId, audioChannel);
         }
 
-        audioChannel.onSound(event.getSource(), position == null ? null : new Vec3(position.getX(), position.getY(), position.getZ()), auxOnly, event.getCategory());
+        audioChannel.onSound(event.getSource(), position == null ? null : new Vec3(position.getX(), position.getY(), position.getZ()), getDirectGainScale(event.getVoicechat(), auxOnly), event.getCategory());
+    }
+
+    /**
+     * The reference distance workaround doubles the gain of the direct sound in voice chats normal audio type, which uses the linear distance model of OpenAL.
+     * Minecraft caps it with the default <code>AL_MAX_GAIN</code> of 1, but voice chat doesn't, so it needs to be compensated.
+     * The other audio types calculate the distance volume themselves.
+     */
+    private static float getDirectGainScale(VoicechatClientApi api, boolean auxOnly) {
+        if (auxOnly) {
+            return 0F;
+        }
+        if (SoundPhysics.hasReferenceDistanceBug() && api.getClientConfig().getString("audio_type", "NORMAL").equals("NORMAL")) {
+            return 0.5F;
+        }
+        return 1F;
     }
 
 }
