@@ -17,7 +17,8 @@
     "ClientLevelMixin",
     "LocalPlayerMixin",
     "MinecraftMixin",
-    "ClientPacketListenerMixin"
+    "ClientPacketListenerMixin",
+    "SoundOptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

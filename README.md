@@ -1,17 +1,20 @@
 # Sound Physics TeknoCube
 
-Fork of [Sound Physics Remastered](https://github.com/henkelmax/sound-physics-remastered) for TeknoCube (Fabric).
+Fork de [Sound Physics Remastered](https://github.com/henkelmax/sound-physics-remastered) pour le serveur **[TeknoCube](https://teknocube.com)**.
 
-- Branch `26.3` (and `master`): Minecraft 26.3. Jar: `release/sound-physics-remastered-fabric-1.5.3+26.3-teknocube.jar`
-- Branch `teknocube/record-physics`: Minecraft 26.2. Jar: `release/sound-physics-remastered-fabric-1.5.1+26.2-teknocube.jar`
+Le mod d’origine traite toute la catégorie Jukebox / blocs musicaux comme un disque long, et coupe la réverbération. Les enceintes du serveur jouent dans cette catégorie, donc le kick sortait sec. Ce fork garde la physique seulement là où elle sert : enceintes, note blocks, et les autres sons de ce slider. Les disques `music_disc.*` restent secs. Le reste du jeu (pas, mobs, blocs) est coupé par défaut, pour ne pas raycaster toute la map. Chaque catégorie se réactive dans Options → Musique et sons.
 
-**Change vs upstream:** `SoundSource.RECORDS` is no longer skipped wholesale. Only `music_disc.*` stay dry when `update_moving_sounds` is off. Plugin speakers, note blocks, and other record-category one-shots get reverb/occlusion.
+Client seul. Même `mod_id` que l’original (`sound_physics_remastered`) : **remplace** le jar upstream, n’installe pas les deux.
 
-Music & Sounds menu adds two toggles: master reverb, and reverb for the Jukebox/Speakers slider. Occlusion stays either way. Three live sliders tune speaker/jukebox reverb: bass, body, hall.
+Discord : https://discord.gg/XZzqvSUcX7
 
-Same `mod_id` as upstream (`sound_physics_remastered`) — **replace** the original jar, do not install both.
+Minecraft **26.3** (Fabric, NeoForge, Forge) :
 
-Client-only. No server / plugin / resource-pack change required.
+- `release/sound-physics-remastered-fabric-1.5.3+26.3-teknocube.jar`
+- `release/sound-physics-remastered-neoforge-1.5.3+26.3-teknocube.jar`
+- `release/sound-physics-remastered-forge-1.5.3+26.3-teknocube.jar`
+
+Minecraft 26.2 Fabric seulement, branche `teknocube/record-physics` : `release/sound-physics-remastered-fabric-1.5.1+26.2-teknocube.jar`
 
 ---
 

@@ -10,5 +10,4 @@ pluginManagement {
 }
 
 rootProject.name = 'sound-physics-remastered'
-// TeknoCube: Fabric profile only. Forge/NeoForge still in tree, not built.
-include('common', 'fabric')
+include('common', 'fabric', 'neoforge', 'forge')
