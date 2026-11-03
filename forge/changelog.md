@@ -1,2 +1,4 @@
-- Applied a proper fix for OpenAL reference distance issue in affected versions
-- Restored old linear attenuation by distance behavior
+- Don't process relative sounds and remove 0, 0, 0 position check
+- Updated Simplified Chinese translation
+- Updated Traditional Chinese translation
+- Added Ukrainian translation
